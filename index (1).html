@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HacıHesaplama — Artık hesaplamalar çok kolay</title>
+<style>
+  :root {
+    --blue:    #0055CC;
+    --blue-d:  #003D99;
+    --blue-l:  #E8F0FE;
+    --accent:  #FF6B00;
+    --bg:      #F8F9FA;
+    --white:   #FFFFFF;
+    --text:    #1A1A2E;
+    --muted:   #6B7280;
+    --border:  #E5E7EB;
+    --green:   #16A34A;
+    --red:     #DC2626;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; }
+
+  /* NAV */
+  nav {
+    background: var(--blue); padding: 0 1.5rem; height: 58px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  .logo { color: #fff; font-size: 1.3rem; font-weight: bold; text-decoration: none; }
+  .logo span { color: #FFD166; }
+  .nav-right { display: flex; align-items: center; gap: 1rem; }
+  .nav-search {
+    padding: 7px 14px; border-radius: 20px; border: none;
+    font-size: .85rem; width: 200px; outline: none;
+  }
+  .nav-links { display: flex; gap: 1.2rem; list-style: none; }
+  .nav-links a { color: #cce0ff; font-size: .85rem; text-decoration: none; }
+  .nav-links a:hover { color: #fff; }
+
+  /* HERO */
+  .hero {
+    background: linear-gradient(135deg, var(--blue) 0%, var(--blue-d) 100%);
+    padding: 48px 1.5rem 56px; text-align: center; color: #fff;
+  }
+  .hero h1 { font-size: clamp(1.6rem, 4vw, 2.4rem); margin-bottom: .6rem; font-weight: bold; }
+  .hero h1 span { color: #FFD166; }
+  .hero p { color: #cce0ff; font-size: .95rem; margin-bottom: 1.5rem; }
+  .hero-search-wrap { display: flex; max-width: 520px; margin: 0 auto; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+  .hero-search { flex: 1; border: none; padding: 14px 18px; font-size: 1rem; outline: none; color: var(--text); }
+  .hero-search-btn { background: var(--accent); color: #fff; border: none; padding: 0 24px; font-size: .95rem; font-weight: bold; cursor: pointer; }
+  .hero-search-btn:hover { background: #e55d00; }
+
+  /* STATS */
+  .stats { background: #fff; border-bottom: 1px solid var(--border); display: flex; justify-content: center; flex-wrap: wrap; }
+  .stat { padding: 16px 36px; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-n { font-size: 1.4rem; font-weight: bold; color: var(--blue); }
+  .stat-l { font-size: .75rem; color: var(--muted); }
+
+  /* LAYOUT */
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; display: grid; grid-template-columns: 260px 1fr; gap: 2rem; }
+  @media (max-width: 768px) { .main { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 8px; }
+  .sidebar-cat {
+    padding: 10px 14px; border-radius: 8px; cursor: pointer;
+    border: 1px solid var(--border); background: #fff;
+    font-size: .9rem; text-align: left; transition: all .15s;
+    display: flex; align-items: center; gap: 10px; color: var(--text);
+  }
+  .sidebar-cat:hover, .sidebar-cat.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .sidebar-cat .cat-emoji { font-size: 1.1rem; }
+  .sidebar-cat .cat-count { margin-left: auto; background: var(--blue-l); color: var(--blue); border-radius: 12px; padding: 1px 8px; font-size: .75rem; font-weight: bold; }
+  .sidebar-cat.active .cat-count { background: rgba(255,255,255,.2); color: #fff; }
+
+  /* CONTENT */
+  .content {}
+  .cat-section { margin-bottom: 2.5rem; }
+  .cat-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 1rem; padding-bottom: .6rem; border-bottom: 2px solid var(--blue);
+  }
+  .cat-header h2 { font-size: 1.1rem; color: var(--blue); }
+  .cat-header .emoji { font-size: 1.3rem; }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .tool-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; cursor: pointer; transition: all .15s; text-decoration: none; color: var(--text);
+    display: block;
+  }
+  .tool-card:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(0,85,204,.12); transform: translateY(-1px); }
+  .tool-card h3 { font-size: .875rem; font-weight: bold; margin-bottom: 4px; color: var(--text); }
+  .tool-card p { font-size: .78rem; color: var(--muted); line-height: 1.4; }
+
+  /* CALCULATOR MODAL */
+  .calc-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    z-index: 200; align-items: center; justify-content: center; padding: 1rem;
+  }
+  .calc-overlay.open { display: flex; }
+  .calc-modal {
+    background: #fff; border-radius: 12px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 16px 48px rgba(0,0,0,.2);
+  }
+  .calc-header {
+    background: var(--blue); color: #fff; padding: 16px 20px;
+    border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center;
+  }
+  .calc-header h2 { font-size: 1rem; }
+  .close-btn { background: none; border: none; color: #fff; font-size: 1.4rem; cursor: pointer; line-height: 1; }
+  .calc-body { padding: 20px; }
+  .field-group { margin-bottom: 1rem; }
+  .field-group label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: 4px; font-weight: bold; }
+  .field-group input, .field-group select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: .95rem; outline: none; transition: border-color .2s; color: var(--text);
+  }
+  .field-group input:focus, .field-group select:focus { border-color: var(--blue); }
+  .calc-btn {
+    width: 100%; background: var(--blue); color: #fff; border: none;
+    padding: 12px; border-radius: 8px; font-size: 1rem; font-weight: bold;
+    cursor: pointer; margin-top: .5rem; transition: background .2s;
+  }
+  .calc-btn:hover { background: var(--blue-d); }
+  .result-box {
+    background: var(--blue-l); border: 1px solid #b3d0ff; border-radius: 8px;
+    padding: 16px; margin-top: 1rem; display: none;
+  }
+  .result-box.show { display: block; }
+  .result-main { font-size: 1.4rem; font-weight: bold; color: var(--blue); margin-bottom: 6px; }
+  .result-detail { font-size: .85rem; color: var(--muted); line-height: 1.6; }
+  .result-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: .85rem; }
+  .result-table td { padding: 5px 8px; border-bottom: 1px solid #d0e4ff; }
+  .result-table td:first-child { color: var(--muted); }
+  .result-table td:last-child { font-weight: bold; text-align: right; color: var(--text); }
+
+  /* FOOTER */
+  footer { background: #1a1a2e; color: #9ca3af; padding: 32px 1.5rem; text-align: center; margin-top: 2rem; }
+  footer .footer-logo { color: #fff; font-size: 1.1rem; font-weight: bold; margin-bottom: .5rem; }
+  footer .footer-logo span { color: #FFD166; }
+  footer p { font-size: .82rem; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#">Hacı<span>Hesaplama</span></a>
+  <div class="nav-right">
+    <input class="nav-search" type="text" placeholder="Hesaplama ara..." oninput="searchTools(this.value)">
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <h1>Artık hesaplamalar <span>çok kolay!</span></h1>
+  <p>Günlük hayatın her alanında ihtiyaç duyduğun yüzlerce hesaplama aracı, tek adreste.</p>
+  <div class="hero-search-wrap">
+    <input class="hero-search" type="text" placeholder="Örnek: kira artış, maaş, vücut kitle..." oninput="searchTools(this.value)">
+    <button class="hero-search-btn">Ara</button>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><div class="stat-n">50+</div><div class="stat-l">Hesaplama Aracı</div></div>
+  <div class="stat"><div class="stat-n">8</div><div class="stat-l">Kategori</div></div>
+  <div class="stat"><div class="stat-n">%100</div><div class="stat-l">Ücretsiz</div></div>
+  <div class="stat"><div class="stat-n">Anlık</div><div class="stat-l">Sonuç</div></div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <button class="sidebar-cat active" onclick="filterCat('all', this)">
+      <span class="cat-emoji">📋</span> Tümü <span class="cat-count">50+</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('finans', this)">
+      <span class="cat-emoji">💰</span> Finans & Kredi <span class="cat-count">10</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('maas', this)">
+      <span class="cat-emoji">💼</span> Maaş & Vergi <span class="cat-count">7</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('saglik', this)">
+      <span class="cat-emoji">🏥</span> Sağlık <span class="cat-count">8</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('sinav', this)">
+      <span class="cat-emoji">📚</span> Sınav & Eğitim <span class="cat-count">7</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('matematik', this)">
+      <span class="cat-emoji">🔢</span> Matematik <span class="cat-count">6</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('gundelik', this)">
+      <span class="cat-emoji">🏠</span> Gündelik Hayat <span class="cat-count">7</span>
+    </button>
+    <button class="sidebar-cat" onclick="filterCat('zaman', this)">
+      <span class="cat-emoji">⏰</span> Zaman <span class="cat-count">5</span>
+    </button>
+  </aside>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- FİNANS -->
+    <div class="cat-section" data-cat="finans">
+      <div class="cat-header"><span class="emoji">💰</span><h2>Finans & Kredi Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('kredi')"><h3>💳 Kredi Hesaplama</h3><p>Aylık taksit ve toplam geri ödeme tutarı</p></a>
+        <a class="tool-card" onclick="openCalc('faiz')"><h3>📈 Faiz Hesaplama</h3><p>Basit ve bileşik faiz hesaplama</p></a>
+        <a class="tool-card" onclick="openCalc('kira-artis')"><h3>🏠 Kira Artış Hesaplama</h3><p>ÜFE/TÜFE oranına göre kira artışı</p></a>
+        <a class="tool-card" onclick="openCalc('kdv')"><h3>🧾 KDV Hesaplama</h3><p>KDV dahil/hariç fiyat hesaplama</p></a>
+        <a class="tool-card" onclick="openCalc('indirim')"><h3>🏷️ İndirim Hesaplama</h3><p>İndirim sonrası fiyatı bul</p></a>
+        <a class="tool-card" onclick="openCalc('kar')"><h3>📊 Kâr/Zarar Hesaplama</h3><p>Alış-satış fiyatına göre kâr oranı</p></a>
+        <a class="tool-card" onclick="openCalc('doviz')"><h3>💱 Döviz Çevirici</h3><p>TL, Dolar, Euro dönüşümü</p></a>
+        <a class="tool-card" onclick="openCalc('altin')"><h3>🪙 Altın Hesaplama</h3><p>Gram/çeyrek/yarım/tam altın</p></a>
+        <a class="tool-card" onclick="openCalc('enflasyon')"><h3>📉 Enflasyon Hesaplama</h3><p>Paranın satın alma gücü değişimi</p></a>
+        <a class="tool-card" onclick="openCalc('yuzde')"><h3>% Yüzde Hesaplama</h3><p>Yüzde artış, azalış ve oranlar</p></a>
+      </div>
+    </div>
+
+    <!-- MAAŞ -->
+    <div class="cat-section" data-cat="maas">
+      <div class="cat-header"><span class="emoji">💼</span><h2>Maaş & Vergi Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('maas')"><h3>💰 Maaş Hesaplama</h3><p>Brütten nete, netten brüte maaş</p></a>
+        <a class="tool-card" onclick="openCalc('kdem')"><h3>📋 Kıdem Tazminatı</h3><p>Kıdem tazminatı tutarını hesapla</p></a>
+        <a class="tool-card" onclick="openCalc('ihbar')"><h3>📄 İhbar Tazminatı</h3><p>İhbar süresi ve tazminat tutarı</p></a>
+        <a class="tool-card" onclick="openCalc('agi')"><h3>👶 AGİ Hesaplama</h3><p>Aile gelir istisnası miktarı</p></a>
+        <a class="tool-card" onclick="openCalc('gelir-vergisi')"><h3>📑 Gelir Vergisi</h3><p>Yıllık gelir vergisi hesaplama</p></a>
+        <a class="tool-card" onclick="openCalc('damga')"><h3>🔏 Damga Vergisi</h3><p>Sözleşme damga vergisi</p></a>
+        <a class="tool-card" onclick="openCalc('emekli')"><h3>👴 Emeklilik Hesaplama</h3><p>Kaç yıl daha çalışman gerekiyor</p></a>
+      </div>
+    </div>
+
+    <!-- SAĞLIK -->
+    <div class="cat-section" data-cat="saglik">
+      <div class="cat-header"><span class="emoji">🏥</span><h2>Sağlık Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('vki')"><h3>⚖️ Vücut Kitle İndeksi</h3><p>BMI hesaplama ve değerlendirme</p></a>
+        <a class="tool-card" onclick="openCalc('ideal-kilo')"><h3>🎯 İdeal Kilo</h3><p>Boyuna göre ideal kilo aralığı</p></a>
+        <a class="tool-card" onclick="openCalc('kalori')"><h3>🍽️ Kalori İhtiyacı</h3><p>Günlük kalori ihtiyacını hesapla</p></a>
+        <a class="tool-card" onclick="openCalc('gebelik')"><h3>🤰 Gebelik Haftası</h3><p>Son adet tarihine göre hafta hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('boy-tahmin')"><h3>📏 Boy Tahmini</h3><p>Çocuğun tahmini yetişkin boyu</p></a>
+        <a class="tool-card" onclick="openCalc('nabiz')"><h3>❤️ Hedef Nabız</h3><p>Egzersiz için hedef nabız bölgesi</p></a>
+        <a class="tool-card" onclick="openCalc('su')"><h3>💧 Su İhtiyacı</h3><p>Günlük su tüketim miktarı</p></a>
+        <a class="tool-card" onclick="openCalc('yag-orani')"><h3>🏋️ Vücut Yağ Oranı</h3><p>Vücut yağ yüzdesi hesaplama</p></a>
+      </div>
+    </div>
+
+    <!-- SINAV -->
+    <div class="cat-section" data-cat="sinav">
+      <div class="cat-header"><span class="emoji">📚</span><h2>Sınav & Eğitim Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('tyt')"><h3>📝 TYT Puan Hesaplama</h3><p>Doğru/yanlış sayısına göre TYT puanı</p></a>
+        <a class="tool-card" onclick="openCalc('not-ort')"><h3>📊 Not Ortalaması</h3><p>Ders notları ortalaması</p></a>
+        <a class="tool-card" onclick="openCalc('vize-final')"><h3>🎓 Vize-Final Ortalaması</h3><p>Dersi geçmek için kaç almam lazım</p></a>
+        <a class="tool-card" onclick="openCalc('lgs')"><h3>📐 LGS Net Hesaplama</h3><p>LGS sınavı net ve puan hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('kpss')"><h3>📋 KPSS Puan Hesaplama</h3><p>KPSS genel yetenek ve kültür puanı</p></a>
+        <a class="tool-card" onclick="openCalc('ales')"><h3>📈 ALES Puan Hesaplama</h3><p>ALES sayısal/sözel puan hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('not-gecme')"><h3>✅ Dersi Geçme Notu</h3><p>Kaç final puanı almam gerekiyor?</p></a>
+      </div>
+    </div>
+
+    <!-- MATEMATİK -->
+    <div class="cat-section" data-cat="matematik">
+      <div class="cat-header"><span class="emoji">🔢</span><h2>Matematik Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('yuzde')"><h3>% Yüzde Hesaplama</h3><p>Her türlü yüzde işlemi</p></a>
+        <a class="tool-card" onclick="openCalc('alan')"><h3>📐 Alan Hesaplama</h3><p>Kare, dikdörtgen, daire alanı</p></a>
+        <a class="tool-card" onclick="openCalc('oranTum')"><h3>⚖️ Oran Orantı</h3><p>Bilinmeyen değeri bul</p></a>
+        <a class="tool-card" onclick="openCalc('kuvvet')"><h3>🔢 Üslü Sayı</h3><p>Sayının kuvvetini hesapla</p></a>
+        <a class="tool-card" onclick="openCalc('ebob')"><h3>🔣 EBOB / EKOK</h3><p>En büyük ortak bölen ve kat</p></a>
+        <a class="tool-card" onclick="openCalc('cevrim')"><h3>📏 Birim Çevirme</h3><p>Uzunluk, ağırlık, hacim çevirme</p></a>
+      </div>
+    </div>
+
+    <!-- GÜNDELİK -->
+    <div class="cat-section" data-cat="gundelik">
+      <div class="cat-header"><span class="emoji">🏠</span><h2>Gündelik Hayat Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('elektrik')"><h3>💡 Elektrik Faturası</h3><p>Cihazların elektrik maliyeti</p></a>
+        <a class="tool-card" onclick="openCalc('yakit')"><h3>⛽ Yakıt Masrafı</h3><p>Yolculuk yakıt masrafı hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('boya')"><h3>🎨 Boya Hesaplama</h3><p>Oda için kaç litre boya lazım</p></a>
+        <a class="tool-card" onclick="openCalc('kiremit')"><h3>🏠 Fayans/Zemin</h3><p>Oda için kaç metrekare malzeme</p></a>
+        <a class="tool-card" onclick="openCalc('tasinma')"><h3>📦 Taşınma Maliyeti</h3><p>Tahmini taşınma gider hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('hiz')"><h3>🚗 Hız Hesaplama</h3><p>Hız, mesafe, süre hesabı</p></a>
+        <a class="tool-card" onclick="openCalc('bahsis')"><h3>🍽️ Bahşiş Hesaplama</h3><p>Restoran bahşiş miktarı</p></a>
+      </div>
+    </div>
+
+    <!-- ZAMAN -->
+    <div class="cat-section" data-cat="zaman">
+      <div class="cat-header"><span class="emoji">⏰</span><h2>Zaman Hesaplamaları</h2></div>
+      <div class="tools-grid">
+        <a class="tool-card" onclick="openCalc('yas')"><h3>🎂 Yaş Hesaplama</h3><p>Tam yaşını gün gün öğren</p></a>
+        <a class="tool-card" onclick="openCalc('tarih-fark')"><h3>📅 Tarih Farkı</h3><p>İki tarih arasındaki gün sayısı</p></a>
+        <a class="tool-card" onclick="openCalc('gun-ekle')"><h3>➕ Tarihe Gün Ekle</h3><p>X gün sonrası hangi tarih?</p></a>
+        <a class="tool-card" onclick="openCalc('sure')"><h3>⏱️ Süre Hesaplama</h3><p>Saat, dakika, saniye dönüşümü</p></a>
+        <a class="tool-card" onclick="openCalc('yon')"><h3>🌍 Yılın Kaçıncı Günü</h3><p>Bugün yılın kaçıncı günü</p></a>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CALCULATOR MODAL -->
+<div class="calc-overlay" id="overlay" onclick="closeIfOutside(event)">
+  <div class="calc-modal" id="modal">
+    <div class="calc-header">
+      <h2 id="modal-title">Hesaplama</h2>
+      <button class="close-btn" onclick="closeCalc()">×</button>
+    </div>
+    <div class="calc-body" id="modal-body"></div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Hacı<span>Hesaplama</span></div>
+  <p>Artık hesaplamalar çok kolay. Günlük hayatın her alanında ihtiyaç duyduğun hesaplama araçları, tamamen ücretsiz.</p>
+  <p style="margin-top:.5rem;">© 2024 HacıHesaplama</p>
+</footer>
+
+<script>
+// ---- FILTER BY CATEGORY ----
+function filterCat(cat, btn) {
+  document.querySelectorAll('.sidebar-cat').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.cat-section').forEach(sec => {
+    sec.style.display = (cat === 'all' || sec.dataset.cat === cat) ? 'block' : 'none';
+  });
+}
+
+// ---- SEARCH ----
+function searchTools(q) {
+  q = q.toLowerCase().trim();
+  document.querySelectorAll('.tool-card').forEach(card => {
+    const txt = card.innerText.toLowerCase();
+    card.style.display = (!q || txt.includes(q)) ? 'block' : 'none';
+  });
+  if (q) {
+    document.querySelectorAll('.cat-section').forEach(sec => {
+      const visible = [...sec.querySelectorAll('.tool-card')].some(c => c.style.display !== 'none');
+      sec.style.display = visible ? 'block' : 'none';
+    });
+  } else {
+    document.querySelectorAll('.cat-section').forEach(sec => sec.style.display = 'block');
+  }
+}
+
+// ---- MODAL ----
+function closeIfOutside(e) { if (e.target.id === 'overlay') closeCalc(); }
+function closeCalc() { document.getElementById('overlay').classList.remove('open'); }
+
+function openCalc(type) {
+  const cfg = calcConfig[type];
+  if (!cfg) return;
+  document.getElementById('modal-title').textContent = cfg.title;
+  document.getElementById('modal-body').innerHTML = cfg.html + `
+    <button class="calc-btn" onclick="calc_${type}()">Hesapla</button>
+    <div class="result-box" id="result"></div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function showResult(html) {
+  const box = document.getElementById('result');
+  box.innerHTML = html;
+  box.classList.add('show');
+}
+
+function fmt(n) { return Number(n).toLocaleString('tr-TR', {maximumFractionDigits:2}); }
+
+// ---- CALCULATORS ----
+const calcConfig = {
+
+  kredi: {
+    title: '💳 Kredi Hesaplama',
+    html: `
+      <div class="field-group"><label>Kredi Tutarı (₺)</label><input id="k1" type="number" placeholder="100000" value="100000"></div>
+      <div class="field-group"><label>Yıllık Faiz Oranı (%)</label><input id="k2" type="number" placeholder="38" value="38" step="0.1"></div>
+      <div class="field-group"><label>Vade (Ay)</label><input id="k3" type="number" placeholder="24" value="24"></div>`
+  },
+  faiz: {
+    title: '📈 Faiz Hesaplama',
+    html: `
+      <div class="field-group"><label>Ana Para (₺)</label><input id="f1" type="number" placeholder="50000" value="50000"></div>
+      <div class="field-group"><label>Yıllık Faiz Oranı (%)</label><input id="f2" type="number" placeholder="45" value="45" step="0.1"></div>
+      <div class="field-group"><label>Süre (Ay)</label><input id="f3" type="number" placeholder="12" value="12"></div>
+      <div class="field-group"><label>Faiz Türü</label>
+        <select id="f4"><option value="basit">Basit Faiz</option><option value="bilesi">Bileşik Faiz</option></select></div>`
+  },
+  'kira-artis': {
+    title: '🏠 Kira Artış Hesaplama',
+    html: `
+      <div class="field-group"><label>Mevcut Kira (₺)</label><input id="kr1" type="number" placeholder="5000" value="5000"></div>
+      <div class="field-group"><label>ÜFE/TÜFE Artış Oranı (%)</label><input id="kr2" type="number" placeholder="25" value="25" step="0.1"></div>`
+  },
+  kdv: {
+    title: '🧾 KDV Hesaplama',
+    html: `
+      <div class="field-group"><label>Tutar (₺)</label><input id="kdv1" type="number" placeholder="1000" value="1000"></div>
+      <div class="field-group"><label>KDV Oranı (%)</label>
+        <select id="kdv2"><option value="20">%20</option><option value="10">%10</option><option value="1">%1</option></select></div>
+      <div class="field-group"><label>İşlem</label>
+        <select id="kdv3"><option value="haric">KDV hariç → dahil fiyat bul</option><option value="dahil">KDV dahil → hariç fiyat bul</option></select></div>`
+  },
+  indirim: {
+    title: '🏷️ İndirim Hesaplama',
+    html: `
+      <div class="field-group"><label>Orijinal Fiyat (₺)</label><input id="i1" type="number" placeholder="250" value="250"></div>
+      <div class="field-group"><label>İndirim Oranı (%)</label><input id="i2" type="number" placeholder="30" value="30" step="0.5"></div>`
+  },
+  kar: {
+    title: '📊 Kâr/Zarar Hesaplama',
+    html: `
+      <div class="field-group"><label>Alış Fiyatı (₺)</label><input id="kar1" type="number" placeholder="100" value="100"></div>
+      <div class="field-group"><label>Satış Fiyatı (₺)</label><input id="kar2" type="number" placeholder="145" value="145"></div>`
+  },
+  yuzde: {
+    title: '% Yüzde Hesaplama',
+    html: `
+      <div class="field-group"><label>İşlem Türü</label>
+        <select id="y0" onchange="updateYuzde()">
+          <option value="1">Sayının yüzde kaçı? (A'nın %X'i)</option>
+          <option value="2">Yüzde kaç artış/azalış?</option>
+          <option value="3">A, B'nin yüzde kaçı?</option>
+        </select></div>
+      <div id="yuzde-fields">
+        <div class="field-group"><label>Sayı (A)</label><input id="y1" type="number" placeholder="500" value="500"></div>
+        <div class="field-group"><label>Yüzde (%X)</label><input id="y2" type="number" placeholder="18" value="18"></div>
+      </div>`
+  },
+  maas: {
+    title: '💰 Maaş Hesaplama',
+    html: `
+      <div class="field-group"><label>İşlem</label>
+        <select id="m0"><option value="brut">Brüt → Net</option><option value="net">Net → Brüt</option></select></div>
+      <div class="field-group"><label>Tutar (₺)</label><input id="m1" type="number" placeholder="25000" value="25000"></div>
+      <div class="field-group"><label>Medeni Durum</label>
+        <select id="m2"><option value="bekr">Bekar</option><option value="evli">Evli (eş çalışmıyor)</option></select></div>`
+  },
+  vki: {
+    title: '⚖️ Vücut Kitle İndeksi (BMI)',
+    html: `
+      <div class="field-group"><label>Boy (cm)</label><input id="v1" type="number" placeholder="170" value="170"></div>
+      <div class="field-group"><label>Kilo (kg)</label><input id="v2" type="number" placeholder="70" value="70"></div>`
+  },
+  'ideal-kilo': {
+    title: '🎯 İdeal Kilo Hesaplama',
+    html: `
+      <div class="field-group"><label>Boy (cm)</label><input id="ik1" type="number" placeholder="170" value="170"></div>
+      <div class="field-group"><label>Cinsiyet</label><select id="ik2"><option value="e">Erkek</option><option value="k">Kadın</option></select></div>`
+  },
+  kalori: {
+    title: '🍽️ Günlük Kalori İhtiyacı',
+    html: `
+      <div class="field-group"><label>Boy (cm)</label><input id="kal1" type="number" placeholder="170" value="170"></div>
+      <div class="field-group"><label>Kilo (kg)</label><input id="kal2" type="number" placeholder="70" value="70"></div>
+      <div class="field-group"><label>Yaş</label><input id="kal3" type="number" placeholder="25" value="25"></div>
+      <div class="field-group"><label>Cinsiyet</label><select id="kal4"><option value="e">Erkek</option><option value="k">Kadın</option></select></div>
+      <div class="field-group"><label>Aktivite Düzeyi</label>
+        <select id="kal5">
+          <option value="1.2">Hareketsiz (masa başı iş)</option>
+          <option value="1.375">Az aktif (haftada 1-3 gün)</option>
+          <option value="1.55" selected>Orta aktif (haftada 3-5 gün)</option>
+          <option value="1.725">Çok aktif (haftada 6-7 gün)</option>
+        </select></div>`
+  },
+  tyt: {
+    title: '📝 TYT Puan Hesaplama',
+    html: `
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:1rem;">Her bölüm için doğru ve yanlış sayısını gir:</p>
+      <div class="field-group"><label>Türkçe — Doğru / Yanlış (40 soru)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="tyt1d" type="number" placeholder="Doğru" min="0" max="40">
+          <input id="tyt1y" type="number" placeholder="Yanlış" min="0" max="40">
+        </div></div>
+      <div class="field-group"><label>Matematik — Doğru / Yanlış (40 soru)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="tyt2d" type="number" placeholder="Doğru" min="0" max="40">
+          <input id="tyt2y" type="number" placeholder="Yanlış" min="0" max="40">
+        </div></div>
+      <div class="field-group"><label>Sosyal Bilimler — Doğru / Yanlış (20 soru)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="tyt3d" type="number" placeholder="Doğru" min="0" max="20">
+          <input id="tyt3y" type="number" placeholder="Yanlış" min="0" max="20">
+        </div></div>
+      <div class="field-group"><label>Fen Bilimleri — Doğru / Yanlış (20 soru)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <input id="tyt4d" type="number" placeholder="Doğru" min="0" max="20">
+          <input id="tyt4y" type="number" placeholder="Yanlış" min="0" max="20">
+        </div></div>`
+  },
+  'vize-final': {
+    title: '🎓 Vize-Final Ortalaması',
+    html: `
+      <div class="field-group"><label>Vize Notu (0-100)</label><input id="vf1" type="number" placeholder="60" value="60" min="0" max="100"></div>
+      <div class="field-group"><label>Vize Ağırlığı (%)</label><select id="vf2"><option value="40">%40</option><option value="30">%30</option><option value="50">%50</option></select></div>
+      <div class="field-group"><label>Geçme Notu</label><select id="vf3"><option value="50">50</option><option value="60">60</option><option value="45">45</option></select></div>`
+  },
+  'not-gecme': {
+    title: '✅ Dersi Geçmek İçin Kaç Final Almam Lazım?',
+    html: `
+      <div class="field-group"><label>Vize Notum</label><input id="ng1" type="number" placeholder="55" value="55" min="0" max="100"></div>
+      <div class="field-group"><label>Vize Ağırlığı (%)</label><select id="ng2"><option value="40">%40</option><option value="30">%30</option><option value="50">%50</option></select></div>
+      <div class="field-group"><label>Geçme Notu</label><select id="ng3"><option value="50">50</option><option value="60">60</option><option value="45">45</option></select></div>`
+  },
+  yas: {
+    title: '🎂 Yaş Hesaplama',
+    html: `<div class="field-group"><label>Doğum Tarihin</label><input id="yas1" type="date"></div>`
+  },
+  'tarih-fark': {
+    title: '📅 İki Tarih Arasındaki Fark',
+    html: `
+      <div class="field-group"><label>Başlangıç Tarihi</label><input id="td1" type="date"></div>
+      <div class="field-group"><label>Bitiş Tarihi</label><input id="td2" type="date"></div>`
+  },
+  hiz: {
+    title: '🚗 Hız / Mesafe / Süre Hesaplama',
+    html: `
+      <div class="field-group"><label>Ne hesaplayalım?</label>
+        <select id="hiz0"><option value="hiz">Hız (km/s)</option><option value="mesafe">Mesafe (km)</option><option value="sure">Süre (saat)</option></select></div>
+      <div class="field-group"><label>Mesafe (km)</label><input id="hiz1" type="number" placeholder="300" value="300"></div>
+      <div class="field-group"><label>Süre (saat)</label><input id="hiz2" type="number" placeholder="3" value="3" step="0.5"></div>
+      <div class="field-group"><label>Hız (km/s)</label><input id="hiz3" type="number" placeholder="100" value="100"></div>`
+  },
+  elektrik: {
+    title: '💡 Elektrik Faturası Hesaplama',
+    html: `
+      <div class="field-group"><label>Cihazın Gücü (Watt)</label><input id="el1" type="number" placeholder="1000" value="1000"></div>
+      <div class="field-group"><label>Günlük Kullanım (Saat)</label><input id="el2" type="number" placeholder="4" value="4" step="0.5"></div>
+      <div class="field-group"><label>kWh Birim Fiyatı (₺)</label><input id="el3" type="number" placeholder="3.8" value="3.8" step="0.1"></div>`
+  },
+  yakit: {
+    title: '⛽ Yakıt Masrafı Hesaplama',
+    html: `
+      <div class="field-group"><label>Mesafe (km)</label><input id="yak1" type="number" placeholder="500" value="500"></div>
+      <div class="field-group"><label>Araç Tüketimi (100km/litre)</label><input id="yak2" type="number" placeholder="7" value="7" step="0.5"></div>
+      <div class="field-group"><label>Yakıt Fiyatı (₺/litre)</label><input id="yak3" type="number" placeholder="45" value="45" step="0.5"></div>`
+  },
+  bahsis: {
+    title: '🍽️ Bahşiş Hesaplama',
+    html: `
+      <div class="field-group"><label>Hesap Tutarı (₺)</label><input id="bah1" type="number" placeholder="350" value="350"></div>
+      <div class="field-group"><label>Bahşiş Oranı (%)</label><select id="bah2"><option value="10">%10</option><option value="15">%15</option><option value="20">%20</option><option value="5">%5</option></select></div>
+      <div class="field-group"><label>Kişi Sayısı</label><input id="bah3" type="number" placeholder="3" value="3" min="1"></div>`
+  },
+};
+
+// ---- CALCULATION FUNCTIONS ----
+function calc_kredi() {
+  const P = +document.getElementById('k1').value;
+  const r = (+document.getElementById('k2').value / 100) / 12;
+  const n = +document.getElementById('k3').value;
+  if (!P || !r || !n) return;
+  const taksit = P * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+  const toplam = taksit * n;
+  showResult(`<div class="result-main">Aylık Taksit: ${fmt(taksit)} ₺</div>
+    <table class="result-table">
+      <tr><td>Toplam Geri Ödeme</td><td>${fmt(toplam)} ₺</td></tr>
+      <tr><td>Toplam Faiz</td><td>${fmt(toplam-P)} ₺</td></tr>
+      <tr><td>Vade</td><td>${n} ay</td></tr>
+    </table>`);
+}
+function calc_faiz() {
+  const A = +document.getElementById('f1').value;
+  const r = +document.getElementById('f2').value / 100;
+  const ay = +document.getElementById('f3').value;
+  const tip = document.getElementById('f4').value;
+  let faiz, toplam;
+  if (tip === 'basit') { faiz = A * r * (ay/12); toplam = A + faiz; }
+  else { toplam = A * Math.pow(1 + r/12, ay); faiz = toplam - A; }
+  showResult(`<div class="result-main">Faiz: ${fmt(faiz)} ₺</div>
+    <table class="result-table">
+      <tr><td>Ana Para</td><td>${fmt(A)} ₺</td></tr>
+      <tr><td>Toplam Tutar</td><td>${fmt(toplam)} ₺</td></tr>
+    </table>`);
+}
+function calc_kira_artis() {
+  const kira = +document.getElementById('kr1').value;
+  const oran = +document.getElementById('kr2').value;
+  const artis = kira * oran / 100;
+  showResult(`<div class="result-main">Yeni Kira: ${fmt(kira+artis)} ₺</div>
+    <table class="result-table">
+      <tr><td>Mevcut Kira</td><td>${fmt(kira)} ₺</td></tr>
+      <tr><td>Artış Miktarı</td><td>${fmt(artis)} ₺</td></tr>
+      <tr><td>Artış Oranı</td><td>%${oran}</td></tr>
+    </table>`);
+}
+function calc_kdv() {
+  const t = +document.getElementById('kdv1').value;
+  const oran = +document.getElementById('kdv2').value;
+  const islem = document.getElementById('kdv3').value;
+  let haric, dahil, kdv;
+  if (islem === 'haric') { haric = t; kdv = t * oran / 100; dahil = t + kdv; }
+  else { dahil = t; haric = t / (1 + oran/100); kdv = dahil - haric; }
+  showResult(`<div class="result-main">${islem==='haric'?'KDV Dahil: '+fmt(dahil)+' ₺':'KDV Hariç: '+fmt(haric)+' ₺'}</div>
+    <table class="result-table">
+      <tr><td>KDV Tutarı (%${oran})</td><td>${fmt(kdv)} ₺</td></tr>
+      <tr><td>KDV Hariç</td><td>${fmt(haric)} ₺</td></tr>
+      <tr><td>KDV Dahil</td><td>${fmt(dahil)} ₺</td></tr>
+    </table>`);
+}
+function calc_indirim() {
+  const p = +document.getElementById('i1').value;
+  const oran = +document.getElementById('i2').value;
+  const indirim = p * oran / 100;
+  showResult(`<div class="result-main">İndirimli Fiyat: ${fmt(p-indirim)} ₺</div>
+    <table class="result-table">
+      <tr><td>İndirim Tutarı</td><td>${fmt(indirim)} ₺</td></tr>
+      <tr><td>Tasarruf Oranı</td><td>%${oran}</td></tr>
+    </table>`);
+}
+function calc_kar() {
+  const alis = +document.getElementById('kar1').value;
+  const satis = +document.getElementById('kar2').value;
+  const fark = satis - alis;
+  const oran = ((satis - alis) / alis * 100).toFixed(2);
+  const sonuc = fark >= 0 ? '📈 Kâr' : '📉 Zarar';
+  showResult(`<div class="result-main" style="color:${fark>=0?'var(--green)':'var(--red)'}">${sonuc}: ${fmt(Math.abs(fark))} ₺</div>
+    <table class="result-table">
+      <tr><td>Alış Fiyatı</td><td>${fmt(alis)} ₺</td></tr>
+      <tr><td>Satış Fiyatı</td><td>${fmt(satis)} ₺</td></tr>
+      <tr><td>Oran</td><td>${fark>=0?'+':''}${oran}%</td></tr>
+    </table>`);
+}
+function updateYuzde() {} // placeholder for dynamic field update
+function calc_yuzde() {
+  const tip = +document.getElementById('y0').value;
+  const a = +document.getElementById('y1').value;
+  const b = +document.getElementById('y2').value;
+  let sonuc, aciklama;
+  if (tip === 1) { sonuc = a * b / 100; aciklama = `${fmt(a)}'nin %${b}'si = ${fmt(sonuc)}`; }
+  else if (tip === 2) { sonuc = ((b-a)/a*100).toFixed(2); aciklama = `${fmt(a)}'den ${fmt(b)}'e değişim: ${sonuc > 0 ? '+' : ''}${sonuc}%`; }
+  else { sonuc = (a/b*100).toFixed(2); aciklama = `${fmt(a)}, ${fmt(b)}'nin %${sonuc}'i`; }
+  showResult(`<div class="result-main">${fmt(sonuc)}</div><div class="result-detail">${aciklama}</div>`);
+}
+function calc_maas() {
+  const brut = +document.getElementById('m1').value;
+  const tip = document.getElementById('m0').value;
+  let hesapBrut;
+  if (tip === 'brut') hesapBrut = brut;
+  else hesapBrut = brut / 0.65;
+  const sgk = hesapBrut * 0.14;
+  const issizlik = hesapBrut * 0.01;
+  const vergiBaz = hesapBrut - sgk - issizlik;
+  const gelirVergisi = vergiBaz * 0.15;
+  const damga = hesapBrut * 0.00759;
+  const net = hesapBrut - sgk - issizlik - gelirVergisi - damga;
+  showResult(`<div class="result-main">Net Maaş: ${fmt(net)} ₺</div>
+    <table class="result-table">
+      <tr><td>Brüt Maaş</td><td>${fmt(hesapBrut)} ₺</td></tr>
+      <tr><td>SGK İşçi Payı (%14)</td><td>-${fmt(sgk)} ₺</td></tr>
+      <tr><td>İşsizlik (%1)</td><td>-${fmt(issizlik)} ₺</td></tr>
+      <tr><td>Gelir Vergisi (%15)</td><td>-${fmt(gelirVergisi)} ₺</td></tr>
+      <tr><td>Damga Vergisi</td><td>-${fmt(damga)} ₺</td></tr>
+    </table>`);
+}
+function calc_vki() {
+  const boy = +document.getElementById('v1').value / 100;
+  const kilo = +document.getElementById('v2').value;
+  const bmi = (kilo / (boy * boy)).toFixed(1);
+  let kat;
+  if (bmi < 18.5) kat = '🔵 Zayıf';
+  else if (bmi < 25) kat = '🟢 Normal';
+  else if (bmi < 30) kat = '🟡 Fazla Kilolu';
+  else kat = '🔴 Obez';
+  showResult(`<div class="result-main">BMI: ${bmi}</div>
+    <div class="result-detail" style="font-size:1rem;margin-top:6px;">${kat}</div>
+    <table class="result-table" style="margin-top:10px;">
+      <tr><td>Zayıf</td><td>&lt; 18.5</td></tr>
+      <tr><td>Normal</td><td>18.5 – 24.9</td></tr>
+      <tr><td>Fazla Kilolu</td><td>25 – 29.9</td></tr>
+      <tr><td>Obez</td><td>≥ 30</td></tr>
+    </table>`);
+}
+function calc_ideal_kilo() {
+  const boy = +document.getElementById('ik1').value;
+  const cins = document.getElementById('ik2').value;
+  let idealMin, idealMax;
+  if (cins === 'e') { idealMin = 52 + 1.9 * ((boy - 152.4) / 2.54); idealMax = idealMin + 5; }
+  else { idealMin = 49 + 1.7 * ((boy - 152.4) / 2.54); idealMax = idealMin + 5; }
+  showResult(`<div class="result-main">İdeal Kilo: ${fmt(idealMin)} – ${fmt(idealMax)} kg</div>
+    <div class="result-detail">${boy} cm boyundaki ${cins==='e'?'erkek':'kadın'} için ideal ağırlık aralığı</div>`);
+}
+function calc_kalori() {
+  const boy = +document.getElementById('kal1').value;
+  const kilo = +document.getElementById('kal2').value;
+  const yas = +document.getElementById('kal3').value;
+  const cins = document.getElementById('kal4').value;
+  const aktivite = +document.getElementById('kal5').value;
+  let bmr;
+  if (cins === 'e') bmr = 10*kilo + 6.25*boy - 5*yas + 5;
+  else bmr = 10*kilo + 6.25*boy - 5*yas - 161;
+  const tdee = bmr * aktivite;
+  showResult(`<div class="result-main">Günlük İhtiyaç: ${fmt(tdee)} kcal</div>
+    <table class="result-table">
+      <tr><td>Bazal Metabolizma (BMR)</td><td>${fmt(bmr)} kcal</td></tr>
+      <tr><td>Kilo vermek için</td><td>${fmt(tdee-500)} kcal</td></tr>
+      <tr><td>Kilo almak için</td><td>${fmt(tdee+300)} kcal</td></tr>
+    </table>`);
+}
+function calc_tyt() {
+  const d = (id) => +(document.getElementById(id).value||0);
+  const y = (id) => +(document.getElementById(id).value||0);
+  const turkNet = d('tyt1d') - y('tyt1y')/4;
+  const matNet  = d('tyt2d') - y('tyt2y')/4;
+  const sosNet  = d('tyt3d') - y('tyt3y')/4;
+  const fenNet  = d('tyt4d') - y('tyt4y')/4;
+  const toplamNet = turkNet + matNet + sosNet + fenNet;
+  const puan = (toplamNet * 3.333 + 100).toFixed(2);
+  showResult(`<div class="result-main">TYT Puanı: ${puan}</div>
+    <table class="result-table">
+      <tr><td>Türkçe Net</td><td>${turkNet.toFixed(2)}</td></tr>
+      <tr><td>Matematik Net</td><td>${matNet.toFixed(2)}</td></tr>
+      <tr><td>Sosyal Net</td><td>${sosNet.toFixed(2)}</td></tr>
+      <tr><td>Fen Net</td><td>${fenNet.toFixed(2)}</td></tr>
+      <tr><td>Toplam Net</td><td>${toplamNet.toFixed(2)}</td></tr>
+    </table>`);
+}
+function calc_vize_final() {
+  const vize = +document.getElementById('vf1').value;
+  const vizePct = +document.getElementById('vf2').value / 100;
+  const gecme = +document.getElementById('vf3').value;
+  const finalPct = 1 - vizePct;
+  const gerekli = (gecme - vize * vizePct) / finalPct;
+  const durum = gerekli <= 100 ? `✅ Geçmek için finalden en az ${Math.ceil(gerekli)} alman yeterli.` : '❌ Ne yazık ki bu vize notiyle dersi geçmek çok zor.';
+  showResult(`<div class="result-main">${gerekli <= 100 ? Math.ceil(gerekli) : '—'}</div>
+    <div class="result-detail" style="margin-top:6px;">${durum}</div>`);
+}
+function calc_not_gecme() {
+  calc_vize_final(); // same logic
+}
+function calc_yas() {
+  const dogum = new Date(document.getElementById('yas1').value);
+  if (isNaN(dogum)) return;
+  const bugun = new Date();
+  let yas = bugun.getFullYear() - dogum.getFullYear();
+  const fark = bugun - new Date(bugun.getFullYear(), dogum.getMonth(), dogum.getDate());
+  if (fark < 0) yas--;
+  const sonrakiDogum = new Date(bugun.getFullYear() + (fark < 0 ? 0 : 1), dogum.getMonth(), dogum.getDate());
+  const kalanGun = Math.ceil((sonrakiDogum - bugun) / 86400000);
+  showResult(`<div class="result-main">${yas} yaşındasın 🎂</div>
+    <table class="result-table">
+      <tr><td>Bir sonraki doğum gününe</td><td>${kalanGun} gün</td></tr>
+      <tr><td>Yaklaşık gün sayısı</td><td>${fmt(yas*365)} gün</td></tr>
+    </table>`);
+}
+function calc_tarih_fark() {
+  const t1 = new Date(document.getElementById('td1').value);
+  const t2 = new Date(document.getElementById('td2').value);
+  if (isNaN(t1) || isNaN(t2)) return;
+  const gun = Math.abs(Math.round((t2-t1)/86400000));
+  const hafta = Math.floor(gun/7);
+  const ay = Math.floor(gun/30.44);
+  showResult(`<div class="result-main">${gun} gün</div>
+    <table class="result-table">
+      <tr><td>Hafta</td><td>${hafta} hafta</td></tr>
+      <tr><td>Yaklaşık Ay</td><td>${ay} ay</td></tr>
+    </table>`);
+}
+function calc_hiz() {
+  const ne = document.getElementById('hiz0').value;
+  const mes = +document.getElementById('hiz1').value;
+  const sure = +document.getElementById('hiz2').value;
+  const hiz = +document.getElementById('hiz3').value;
+  let sonuc;
+  if (ne === 'hiz') sonuc = `Hız: ${fmt(mes/sure)} km/s`;
+  else if (ne === 'mesafe') sonuc = `Mesafe: ${fmt(hiz*sure)} km`;
+  else sonuc = `Süre: ${fmt(mes/hiz)} saat`;
+  showResult(`<div class="result-main">${sonuc}</div>`);
+}
+function calc_elektrik() {
+  const watt = +document.getElementById('el1').value;
+  const saat = +document.getElementById('el2').value;
+  const fiyat = +document.getElementById('el3').value;
+  const gunluk = watt / 1000 * saat * fiyat;
+  showResult(`<div class="result-main">Günlük: ${fmt(gunluk)} ₺</div>
+    <table class="result-table">
+      <tr><td>Haftalık</td><td>${fmt(gunluk*7)} ₺</td></tr>
+      <tr><td>Aylık</td><td>${fmt(gunluk*30)} ₺</td></tr>
+      <tr><td>Yıllık</td><td>${fmt(gunluk*365)} ₺</td></tr>
+    </table>`);
+}
+function calc_yakit() {
+  const km = +document.getElementById('yak1').value;
+  const tuketim = +document.getElementById('yak2').value;
+  const fiyat = +document.getElementById('yak3').value;
+  const litre = km * tuketim / 100;
+  const maliyet = litre * fiyat;
+  showResult(`<div class="result-main">Maliyet: ${fmt(maliyet)} ₺</div>
+    <table class="result-table">
+      <tr><td>Yakıt Miktarı</td><td>${fmt(litre)} litre</td></tr>
+      <tr><td>Gidiş-Dönüş</td><td>${fmt(maliyet*2)} ₺</td></tr>
+    </table>`);
+}
+function calc_bahsis() {
+  const hesap = +document.getElementById('bah1').value;
+  const oran = +document.getElementById('bah2').value;
+  const kisi = +document.getElementById('bah3').value;
+  const toplam = hesap * oran / 100;
+  const kisiBasina = toplam / kisi;
+  showResult(`<div class="result-main">Bahşiş: ${fmt(toplam)} ₺</div>
+    <table class="result-table">
+      <tr><td>Kişi başı bahşiş</td><td>${fmt(kisiBasina)} ₺</td></tr>
+      <tr><td>Kişi başı toplam</td><td>${fmt(hesap/kisi + kisiBasina)} ₺</td></tr>
+    </table>`);
+}
+
+// Stubs for remaining calcs
+['doviz','altin','enflasyon','kdem','ihbar','agi','gelir_vergisi','damga','emekli',
+ 'gebelik','boy_tahmin','nabiz','su','yag_orani','lgs','kpss','ales',
+ 'alan','oranTum','kuvvet','ebob','cevrim','boya','kiremit','tasinma','gun_ekle','sure','yon'].forEach(id => {
+  window['calc_'+id] = () => showResult('<div class="result-main">Yakında eklenecek! 🚀</div><div class="result-detail">Bu hesaplama yakında burada olacak.</div>');
+});
+// Fix name mismatches
+window.calc_kira_artis = calc_kira_artis;
+window.calc_ideal_kilo = calc_ideal_kilo;
+window.calc_not_gecme = calc_not_gecme;
+</script>
+</body>
+</html>
